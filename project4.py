@@ -80,16 +80,27 @@ def accuracy(nn, pairs):
 ################################################################################
 ### Neural Network code goes here
 class Node:
-    def __init__(self, label, inPaths=[], outPaths=[]):
-        self.label = label
+    def __init__(self, layerIndex, inPaths=[], outPaths=[]):
+        self.value = 0
+        self.layerIndex = layerIndex
         self.inPaths = inPaths
         self.outPaths = outPaths
+        self.weights = []
+        self.values = []
 
     def __str__(self):
-        return "NODE"+str(self.label)
+        return "NODE"+str(self.layerIndex)
 
     def __repr__(self):
-        return "NODE"+str(self.label)
+        return "NODE"+str(self.layerIndex)
+    def initializeWeightsValues(self):
+        self.weights = [random.random() for x in range(len(self.inPaths) + 1)]
+        self.values = [1 for x in range(len(self.inPaths) + 1)]
+
+    def updateValue(self):
+        self.value = dot_product(self.weights, self.values)
+
+
 
 class InputNode(Node):
     def __init__(self, label, outPaths=[]):
@@ -100,36 +111,41 @@ class OutputNode(Node):
         super().__init__(label, inPaths, [])
 
 class NodeNetwork:
-    def __init__(self, inputNodes, hiddenLayers, outputNodes):
+    def __init__(self, nodeNumberList):
+        assert(len(nodeNumberList) > 1) #must have at least input layer and output
+        hiddenLayers = []
+        inputNodes = [InputNode(i) for i in range(nodeNumberList[0])]
+        outputNodes = [OutputNode(i) for i in range(nodeNumberList[-1])]
+        for i in range(len(nodeNumberList) - 2):
+            hiddenLayers.append([Node(i) for i in range(nodeNumberList[i+1])])
+        #connect input nodes and first hidden layer
+        for inputNode in inputNodes:
+            inputNode.outPaths = hiddenLayers[0]
+        for node in hiddenLayers[0]:
+            node.inPaths = inputNodes
+        #connect hidden layers
+        for i in range(len(hiddenLayers) - 1):
+            for node in hiddenLayers[i]:
+                node.outPaths = hiddenLayers[i+1]
+            for node in hiddenLayers[i+1]:
+                node.inPaths = hiddenLayers[i]
+        #connect last hidden layer to output nodes
+        for node in hiddenLayers[-1]:
+            node.outPaths = outputNodes
+        for outputNode in outputNodes:
+            outputNode.inPaths = hiddenLayers[-1]
         self.inputNodes = inputNodes
         self.hiddenLayers = hiddenLayers
         self.outputNodes = outputNodes
+        for node in self.inputNodes:
+            node.initializeWeightsValues()
+        for layer in self.hiddenLayers:
+            for node in layer:
+                node.initializeWeightsValues()
+        for node in self.outputNodes:
+            node.initializeWeightsValues()
 
 
-def makeGraph(nodeNumberList):
-    assert(len(nodeNumberList) > 1) #must have at least input layer and output
-    hiddenLayers = []
-    inputNodes = [InputNode(i) for i in range(nodeNumberList[0])]
-    outputNodes = [OutputNode(i) for i in range(nodeNumberList[-1])]
-    for i in range(len(nodeNumberList) - 2):
-        hiddenLayers.append([Node(i) for i in range(nodeNumberList[i+1])])
-    #connect input nodes and first hidden layer
-    for inputNode in inputNodes:
-        inputNode.outPaths = hiddenLayers[0]
-    for node in hiddenLayers[0]:
-        node.inPaths = inputNodes
-    #connect hidden layers
-    for i in range(len(hiddenLayers) - 1):
-        for node in hiddenLayers[i]:
-            node.outPaths = hiddenLayers[i+1]
-        for node in hiddenLayers[i+1]:
-            node.inPaths = hiddenLayers[i]
-    #connect last hidden layer to output nodes
-    for node in hiddenLayers[-1]:
-        node.outPaths = outputNodes
-    for outputNode in outputNodes:
-        outputNode.inPaths = hiddenLayers[-1]
-    return NodeNetwork(inputNodes, hiddenLayers, outputNodes)
 
 
 
@@ -155,8 +171,8 @@ def main():
     for example in training:
         print(example)
     """
-    a = makeGraph([3,4,5,2])
-    print(a.inputNodes[0].outPaths[0].outPaths)
+    a = NodeNetwork([3,4,5,2])
+    print(a.inputNodes[0].outPaths[0].weights)
 
     ### I expect the running of your program will work something like this;
     ### this is not mandatory and you could have something else below entirely.
