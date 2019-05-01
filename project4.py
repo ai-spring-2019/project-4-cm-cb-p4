@@ -151,6 +151,9 @@ class InputNode(Node):
     def __init__(self, layerNum, layerIndex):
         super().__init__(layerNum, layerIndex)
 
+    def setInput(self, val):
+        self.ai = val
+
 class OutputNode(Node):
     def __init__(self, layerNum, layerIndex):
         super().__init__(layerNum, layerIndex)
@@ -175,8 +178,42 @@ class NodeNetwork:
         self.hiddenLayers = hiddenLayers
         self.outputNodes = outputNodes
 
-    def backPropegateLearning(self, input):
-        #initializeNetwork weights
+    def updateLayerActivations(self, layer):
+        pass
+
+    def gPrime(self, j):
+        pass
+
+    def setErrors(self, node):
+        pass
+
+    def fixWeight(self, node):
+        pass
+
+    def backPropegateLearning(self, inputs):
+        # Weights are initialized when connection object is made
+        iterations = 100
+        for _ in range(iterations):
+            for inp in inputs:
+                for i in range(len(self.inputNodes)):
+                    self.inputNodes[i].setInput(inp[i])
+                    #ai ←xi
+
+                for layer in self.hiddenLayers + self.outputNodes:
+                    self.updateLayerActivations(layer)
+
+                for j in range(len(self.outputNodes)):
+                    self.gPrime(j)
+
+                for reverseLayer in self.hiddenLayers.reverse() + self.inputNodes.reverse():
+                    self.setErrors(reverseLayer)
+
+                for node in self.inputNodes + self.hiddenLayers:
+                    self.fixWeight(node)
+
+        return self
+
+
         #NOW IN LOOP for until satisfied
         #   NOw loop through examples
         #       Put input values inputNodes
@@ -191,7 +228,6 @@ class NodeNetwork:
 
 
         ###hidden layer node should track both inward and outward weights
-        pass
 
 
 
