@@ -1,7 +1,11 @@
 """
-PLEASE DOCUMENT HERE
-
-Usage: python3 project3.py DATASET.csv
+------------------------------------------------
+Names:      Chad Morse and Chris Browne
+Date:       5/1/19
+Assignment: Project 4
+Objective:  Implement forward propagating neural network that learns
+            through back propagation
+------------------------------------------------
 """
 
 import csv, sys, random, math
@@ -78,7 +82,8 @@ def accuracy(nn, pairs):
     return 1 - (true_positives / total)
 
 ################################################################################
-### Neural Network code goes here
+### Neural Network
+################################################################################
 
 class NodeConnection:
     def __init__(self, first, second, weight):
@@ -124,6 +129,16 @@ class Node:
         for connection in self.outPaths:
             outWeights.append(connection.weight)
         return outWeights
+
+    def getOutErrors(self):
+        outErrors = []
+        for connection in self.outPaths:
+            outErrors.append(connection.j.error)
+        return outErrors
+
+    def fixWeights(self, learningRate):
+        for connection in self.outPaths:
+            connection.weight = connection.weight + learningRate * self.ai * connection.j.error
 
     def updateInJandAI(self):
         """dot of weights and inputs-- for this to wrk the previous layer's ai's must be set"""
@@ -177,15 +192,10 @@ class NodeNetwork:
         self.inputNodes = inputNodes
         self.hiddenLayers = hiddenLayers
         self.outputNodes = outputNodes
+        self.learningRate = 0.95
 
     def gPrime(self, x):
         return logistic(x)*(1-logistic(x))
-
-    def setErrors(self, node):
-        pass
-
-    def fixWeight(self, node):
-        pass
 
     def backPropegateLearning(self, inputs):
         # Weights are initialized when connection object is made
@@ -207,11 +217,20 @@ class NodeNetwork:
                     # Δ[j]←g′(inj) × (yj − aj)
 
                 for reverseLayer in self.hiddenLayers.reverse() + [self.inputNodes.reverse()]:
-                    self.setErrors(reverseLayer)
+                    for revNode in reverseLayer:
+                        weights = revNode.getOutWeights()
+                        errors = revNode.getOutErrors()
+                        dotProd = dot_product(weights, errors)
+                        revNode.error = self.gPrime(revNode.inj) * dotProd
+                        # Δ[i] ← g′(ini) sum(wi,j Δ[j])
 
-                for node in self.inputNodes + self.hiddenLayers:
-                    self.fixWeight(node)
-                    # wi,j←wi,j + α × ai × Δ[j]
+                for connectedLayer in [self.inputNodes] + self.hiddenLayers:
+                    for node in connectedLayer:
+                        node.fixWeights(self.learningRate)
+                        # wi,j←wi,j + α × ai × Δ[j]
+
+            # Change if we go until accuracy level is met
+            self.learningRate = self.learningRate - (self.learningRate * (1 / iterations))
 
         return self
 
@@ -230,20 +249,6 @@ class NodeNetwork:
 
 
         ###hidden layer node should track both inward and outward weights
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def main():
