@@ -79,14 +79,27 @@ def accuracy(nn, pairs):
 
 ################################################################################
 ### Neural Network code goes here
+
+class NodeConnection:
+    def __init__(self, first, second, weight):
+        self.i = first
+        self.j = second
+        self.weight = weight
+
+    def __repr__(self):
+        return "[connection between node({},{}) and node({},{}) with weight: {}]".format(
+        self.i.layerNum, self.i.layerIndex, self.j.layerNum, self.j.layerIndex, self.weight)
+
 class Node:
-    def __init__(self, layerIndex, inPaths=[], outPaths=[]):
-        self.value = 0
-        self.activation = 0
+    def __init__(self, layerNum, layerIndex):
+        self.inj = 0
+        self.ai = 0
         self.error = 0
+        self.bias = 0
         self.layerIndex = layerIndex
-        self.inPaths = inPaths
-        self.outPaths = outPaths
+        self.layerNum = layerNum
+        self.inPaths = []
+        self.outPaths = []
 
     def __str__(self):
         return "NODE"+str(self.layerIndex)
@@ -94,60 +107,73 @@ class Node:
     def __repr__(self):
         return "NODE"+str(self.layerIndex)
 
-    def initializeWeightsValues(self):
-        self.weights = [random.random() for x in range(len(self.inPaths) + 1)]
-        self.values = [1 for x in range(len(self.inPaths) + 1)]
-        self.errors = [0 for x in range(len(self.outPaths) + 1)]
+    def getInWeights(self):
+        inWeights = []
+        for connection in self.inPaths:
+            inWeights.append(connection.weight)
+        return inWeights
 
-    def updateValue(self):
-        self.value = dot_product(self.weights, self.values)
-        self.activation = logistic(self.value)
+    def getInActivations(self):
+        inActivations = []
+        for connection in self.inPaths:
+            inActivations.append(connection.i.ai)
+        return inActivations
 
+    def getOutWeights(self):
+        outWeights = []
+        for connection in self.outPaths:
+            outWeights.append(connection.weight)
+        return outWeights
+
+    def updateInJandAI(self):
+        """dot of weights and inputs-- for this to wrk the previous layer's ai's must be set"""
+        inj = 0
+        for connection in self.inPaths:
+            inj += (connection.i.ai * connection.weight)
+        inj += self.bias
+        self.inj = inj
+        self.ai = logistic(inj)
+
+def nodeLayerConnect(firstNodes, nextNodes):
+    for node in firstNodes:
+        node.outPaths = []
+    for node in nextNodes:
+        node.inPaths = []#^both these loops shouldnt be necessary but just incase
+    for i in firstNodes:
+        for j in nextNodes:
+            #for every path i to j
+            newConnection = NodeConnection(i,j, random.random())
+            i.outPaths.append(newConnection)
+            j.inPaths.append(newConnection)
+    return
 
 class InputNode(Node):
-    def __init__(self, label, outPaths=[]):
-        super().__init__(label,[], outPaths)
+    def __init__(self, layerNum, layerIndex):
+        super().__init__(layerNum, layerIndex)
 
 class OutputNode(Node):
-    def __init__(self, label, inPaths=[]):
-        super().__init__(label, inPaths, [])
+    def __init__(self, layerNum, layerIndex):
+        super().__init__(layerNum, layerIndex)
+
 
 class NodeNetwork:
     def __init__(self, nodeNumberList):
         assert(len(nodeNumberList) > 1) #must have at least input layer and output
         hiddenLayers = []
-        inputNodes = [InputNode(i) for i in range(nodeNumberList[0])]
-        outputNodes = [OutputNode(i) for i in range(nodeNumberList[-1])]
-        for i in range(len(nodeNumberList) - 2):
-            hiddenLayers.append([Node(i) for i in range(nodeNumberList[i+1])])
+        inputNodes = [InputNode(0, i) for i in range(nodeNumberList[0])]
+        outputNodes = [OutputNode(len(nodeNumberList) - 1, i) for i in range(nodeNumberList[-1])]
+        for layer in range(len(nodeNumberList) - 2):
+            hiddenLayers.append([Node(layer + 1,index) for index in range(nodeNumberList[layer+1])])
         #connect input nodes and first hidden layer
-        for inputNode in inputNodes:
-            inputNode.outPaths = hiddenLayers[0]
-        for node in hiddenLayers[0]:
-            node.inPaths = inputNodes
+        nodeLayerConnect(inputNodes, hiddenLayers[0])
         #connect hidden layers
         for i in range(len(hiddenLayers) - 1):
-            for node in hiddenLayers[i]:
-                node.outPaths = hiddenLayers[i+1]
-            for node in hiddenLayers[i+1]:
-                node.inPaths = hiddenLayers[i]
+            nodeLayerConnect(hiddenLayers[i], hiddenLayers[i+1])
         #connect last hidden layer to output nodes
-        for node in hiddenLayers[-1]:
-            node.outPaths = outputNodes
-        for outputNode in outputNodes:
-            outputNode.inPaths = hiddenLayers[-1]
+        nodeLayerConnect(hiddenLayers[-1], outputNodes)
         self.inputNodes = inputNodes
         self.hiddenLayers = hiddenLayers
         self.outputNodes = outputNodes
-
-    def initializeNetworkWeights(self):
-        for node in self.inputNodes:
-            node.initializeWeightsValues()
-        for layer in self.hiddenLayers:
-            for node in layer:
-                node.initializeWeightsValues()
-        for node in self.outputNodes:
-            node.initializeWeightsValues()
 
     def backPropegateLearning(self, input):
         #initializeNetwork weights
@@ -165,7 +191,8 @@ class NodeNetwork:
 
 
         ###hidden layer node should track both inward and outward weights
-        
+        pass
+
 
 
 
@@ -194,8 +221,9 @@ def main():
     for example in training:
         print(example)
     """
-    a = NodeNetwork([3,4,6,5,2])
+    a = NodeNetwork([3,5,2])
     print(a.inputNodes[0].outPaths)
+    print(a.hiddenLayers[0][0].inPaths)
 
     ### I expect the running of your program will work something like this;
     ### this is not mandatory and you could have something else below entirely.
