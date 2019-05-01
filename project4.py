@@ -82,24 +82,26 @@ def accuracy(nn, pairs):
 class Node:
     def __init__(self, layerIndex, inPaths=[], outPaths=[]):
         self.value = 0
+        self.activation = 0
+        self.error = 0
         self.layerIndex = layerIndex
         self.inPaths = inPaths
         self.outPaths = outPaths
-        self.weights = []
-        self.values = []
 
     def __str__(self):
         return "NODE"+str(self.layerIndex)
 
     def __repr__(self):
         return "NODE"+str(self.layerIndex)
+
     def initializeWeightsValues(self):
         self.weights = [random.random() for x in range(len(self.inPaths) + 1)]
         self.values = [1 for x in range(len(self.inPaths) + 1)]
+        self.errors = [0 for x in range(len(self.outPaths) + 1)]
 
     def updateValue(self):
         self.value = dot_product(self.weights, self.values)
-
+        self.activation = logistic(self.value)
 
 
 class InputNode(Node):
@@ -137,6 +139,8 @@ class NodeNetwork:
         self.inputNodes = inputNodes
         self.hiddenLayers = hiddenLayers
         self.outputNodes = outputNodes
+
+    def initializeNetworkWeights(self):
         for node in self.inputNodes:
             node.initializeWeightsValues()
         for layer in self.hiddenLayers:
@@ -144,6 +148,25 @@ class NodeNetwork:
                 node.initializeWeightsValues()
         for node in self.outputNodes:
             node.initializeWeightsValues()
+
+    def backPropegateLearning(self, input):
+        #initializeNetwork weights
+        #NOW IN LOOP for until satisfied
+        #   NOw loop through examples
+        #       Put input values inputNodes
+        #       For layer in (self.hiddenLayers + [outputLayer]):
+        #           [set node.values to correct list for all nodes in layer
+        #           then call node.updateValue] - updateLayerActivations
+        #######Back Propegation
+        #       For each node in self.outputNodes:
+        #           sets errors of output nodes (use g'(x) = logistic(x)*(1-logistic(x))) inj = value, aj = activation
+        #       For layer in reverse(self.hiddenlayers ) + [input] ** make sure this is in right order
+        #           set error of each node in layer using
+
+
+        ###hidden layer node should track both inward and outward weights
+        
+
 
 
 
@@ -171,8 +194,8 @@ def main():
     for example in training:
         print(example)
     """
-    a = NodeNetwork([3,4,5,2])
-    print(a.inputNodes[0].outPaths[0].weights)
+    a = NodeNetwork([3,4,6,5,2])
+    print(a.inputNodes[0].outPaths)
 
     ### I expect the running of your program will work something like this;
     ### this is not mandatory and you could have something else below entirely.
