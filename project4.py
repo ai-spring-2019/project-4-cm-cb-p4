@@ -178,11 +178,8 @@ class NodeNetwork:
         self.hiddenLayers = hiddenLayers
         self.outputNodes = outputNodes
 
-    def updateLayerActivations(self, layer):
-        pass
-
-    def gPrime(self, j):
-        pass
+    def gPrime(self, x):
+        return logistic(x)*(1-logistic(x))
 
     def setErrors(self, node):
         pass
@@ -196,20 +193,25 @@ class NodeNetwork:
         for _ in range(iterations):
             for inp in inputs:
                 for i in range(len(self.inputNodes)):
-                    self.inputNodes[i].setInput(inp[i])
-                    #ai ←xi
+                    self.inputNodes[i].setInput(inp[0])
+                    # ai ←xi
 
-                for layer in self.hiddenLayers + self.outputNodes:
-                    self.updateLayerActivations(layer)
+                for layer in self.hiddenLayers + [self.outputNodes]:
+                    for node in layer:
+                        node.updateInJandAI()
+                        # inj← sum(wi,j*ai)
+                        # aj ←g(inj)
 
                 for j in range(len(self.outputNodes)):
-                    self.gPrime(j)
+                    self.outputNodes[j].error = self.gPrime(self.outputNodes[j].inj) * (inp[1] - self.outputNodes[j].aj)
+                    # Δ[j]←g′(inj) × (yj − aj)
 
-                for reverseLayer in self.hiddenLayers.reverse() + self.inputNodes.reverse():
+                for reverseLayer in self.hiddenLayers.reverse() + [self.inputNodes.reverse()]:
                     self.setErrors(reverseLayer)
 
                 for node in self.inputNodes + self.hiddenLayers:
                     self.fixWeight(node)
+                    # wi,j←wi,j + α × ai × Δ[j]
 
         return self
 
@@ -257,9 +259,13 @@ def main():
     for example in training:
         print(example)
     """
-    a = NodeNetwork([3,5,2])
+    a = NodeNetwork([2,4,6])
     print(a.inputNodes[0].outPaths)
-    print(a.hiddenLayers[0][0].inPaths)
+    print(a.hiddenLayers)
+    print('hidden layers')
+    for layer in a.hiddenLayers:
+        print(layer)
+    #print(a.hiddenLayers[0][0].inPaths)
 
     ### I expect the running of your program will work something like this;
     ### this is not mandatory and you could have something else below entirely.
