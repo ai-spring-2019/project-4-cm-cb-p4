@@ -79,12 +79,71 @@ def accuracy(nn, pairs):
 
 ################################################################################
 ### Neural Network code goes here
+class Node:
+    def __init__(self, label, inPaths=[], outPaths=[]):
+        self.label = label
+        self.inPaths = inPaths
+        self.outPaths = outPaths
+
+    def __str__(self):
+        return "NODE"+str(self.label)
+
+    def __repr__(self):
+        return "NODE"+str(self.label)
+
+class InputNode(Node):
+    def __init__(self, label, outPaths=[]):
+        super().__init__(label,[], outPaths)
+
+class OutputNode(Node):
+    def __init__(self, label, inPaths=[]):
+        super().__init__(label, inPaths, [])
+
+class NodeNetwork:
+    def __init__(self, inputNodes, hiddenLayers, outputNodes):
+        self.inputNodes = inputNodes
+        self.hiddenLayers = hiddenLayers
+        self.outputNodes = outputNodes
+
+
+def makeGraph(nodeNumberList):
+    assert(len(nodeNumberList) > 1) #must have at least input layer and output
+    hiddenLayers = []
+    inputNodes = [InputNode(i) for i in range(nodeNumberList[0])]
+    outputNodes = [OutputNode(i) for i in range(nodeNumberList[-1])]
+    for i in range(len(nodeNumberList) - 2):
+        hiddenLayers.append([Node(i) for i in range(nodeNumberList[i+1])])
+    #connect input nodes and first hidden layer
+    for inputNode in inputNodes:
+        inputNode.outPaths = hiddenLayers[0]
+    for node in hiddenLayers[0]:
+        node.inPaths = inputNodes
+    #connect hidden layers
+    for i in range(len(hiddenLayers) - 1):
+        for node in hiddenLayers[i]:
+            node.outPaths = hiddenLayers[i+1]
+        for node in hiddenLayers[i+1]:
+            node.inPaths = hiddenLayers[i]
+    #connect last hidden layer to output nodes
+    for node in hiddenLayers[-1]:
+        node.outPaths = outputNodes
+    for outputNode in outputNodes:
+        outputNode.inPaths = hiddenLayers[-1]
+    return NodeNetwork(inputNodes, hiddenLayers, outputNodes)
+
+
+
+
+
+
+
 
 
 
 
 
 def main():
+    """
     header, data = read_data(sys.argv[1], ",")
 
     pairs = convert_data_to_pairs(data, header)
@@ -95,6 +154,9 @@ def main():
     # Check out the data:
     for example in training:
         print(example)
+    """
+    a = makeGraph([3,4,5,2])
+    print(a.inputNodes[0].outPaths[0].outPaths)
 
     ### I expect the running of your program will work something like this;
     ### this is not mandatory and you could have something else below entirely.
