@@ -274,7 +274,7 @@ def tanh(x):
     return numerator / denominator
 
 def relu(x):
-    # THIS SEEMS NOT THAT USEFUL, BUT THE ARTICLE I READ SAID RELU IS VERY EFFECTIVE
+    #https://isaacchanghau.github.io/post/activation_functions/
     return max(0,x)
 
 def leakyRelu(x):
@@ -290,12 +290,33 @@ def softmax(z):
 ### Cross Validation
 ################################################################################
 
+def learner(size, examples):
+    nnList = [len(examples[0][0])]
+    for _ in range(size):
+        nnList.append(random.randint(5,10))     # WHAT SHOULD THIS REALLY BE
+    nnList.append(len(examples[0][1]))
+    nn = NeuralNetwork(nnList)
+    return nn.backPropegateLearning(examples)
+
+def errorRate(hypothesis, examples):
+    correct = 0
+    count = 0
+    for example in examples:
+        fp = hypothesis.forwardPropegate(example[0])
+        predicted = []
+        for i in range(len(fp)):
+            predicted.append(round(fp[i]))
+        if predicted == example[1]:
+            correct += 1
+        count += 1
+    return correct / count
+
 def partition(examples, fold):
     validation = examples[fold]
     training = []
     for i in range(len(examples)):
         if i != fold:
-            training.append(examples[i])
+            training += examples[i]
     return training, validation
 
 def chunkList(l, k):
@@ -304,29 +325,41 @@ def chunkList(l, k):
         chunks.append(l[i:i+k])
     return chunks
 
-def crossValidationWrapper(learner, k, examples):
+def printEpoch(count, errorT, errorV):
+    print("--------------------------------------------------------")
+    print("Epoch Number: {}".format(count))
+    print()
+    print("Training Data Error:")
+    print(errorT)
+    print("Validation Data Error:")
+    print(errorV)
+    print()
+
+
+def crossValidationWrapper(k, examples):
     errorTraining = []
     errorValidation = []
     size = 1
     exampleChunks = chunkList(examples, k)
     while True:
-        crossValResults = crossValidation(learner, size, k, exampleChunks)
+        crossValResults = crossValidation(size, k, exampleChunks)
         errorTraining.append(crossValResults[0])
         errorValidation.append(crossValResults[1])
-        if min(errorTraining) == 0:     # Define converged here
+        if min(errorTraining) < 0.1:     # Define converged here
             bestSize = errorValidation.index(min(errorValidation)) + 1
             return learner(bestSize, examples)
+        printEpoch(size, errorTraining, errorValidation)
         size += 1
 
-def crossValidation(learner, size, k, exampleChunks):
+def crossValidation(size, k, exampleChunks):
     avgErrorTraining = 0
     avgErrorValidation = 0
 
     for fold in range(1, k):
         trainingSet, validationSet = partition(exampleChunks, fold)
         hypothesis = learner(size, trainingSet)
-        avgErrorTraining += errorRate(hypothesis, trainingSet)      # CREATE ERRORRATE FUNCTION
-        avgErrorValidation += errorRate(hypothesis, validationSet)  # HAVE TO CREATE THIS FUNCTION
+        avgErrorTraining += errorRate(hypothesis, trainingSet)
+        avgErrorValidation += errorRate(hypothesis, validationSet)
     return avgErrorTraining / k, avgErrorValidation / k
 
 
@@ -345,6 +378,9 @@ def main():
     # Check out the data:
     #for example in training:
     #    print(example)
+    n = crossValidationWrapper(2,training)
+    print(n)
+    quit()
     nn = NeuralNetwork([len(training[0][0]),5, len(training[0][1])])
     nn.backPropegateLearning(training)
     for example in training:
