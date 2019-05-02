@@ -174,7 +174,7 @@ class OutputNode(Node):
         super().__init__(layerNum, layerIndex)
 
 
-class NodeNetwork:
+class NeuralNetwork:
     def __init__(self, nodeNumberList):
         assert(len(nodeNumberList) > 1) #must have at least input layer and output
         hiddenLayers = []
@@ -214,10 +214,11 @@ class NodeNetwork:
                         # aj ←g(inj)
 
                 for j in range(len(self.outputNodes)):
-                    self.outputNodes[j].error = self.gPrime(self.outputNodes[j].inj) * (inp[1][j] - self.outputNodes[j].aj)
+                    self.outputNodes[j].error = self.gPrime(self.outputNodes[j].inj) * (inp[1][j] - self.outputNodes[j].ai)
                     # Δ[j]←g′(inj) × (yj − aj)
 
-                for reverseLayer in self.hiddenLayers.reverse() + [self.inputNodes.reverse()]:
+                self.hiddenLayers.reverse()
+                for reverseLayer in self.hiddenLayers + [self.inputNodes]:
                     for revNode in reverseLayer:
                         weights = revNode.getOutWeights() #need to add bias to this
                         errors = revNode.getOutErrors() #need to add a 1 to this to use dot prod
@@ -254,7 +255,6 @@ class NodeNetwork:
 
 
 def main():
-    """
     header, data = read_data(sys.argv[1], ",")
 
     pairs = convert_data_to_pairs(data, header)
@@ -266,9 +266,10 @@ def main():
     for example in training:
         print(example)
     nn = NeuralNetwork([3, 6, 3])
-    nn.back_propagation_learning(training)
-    """
-    a = NodeNetwork([2,4,6])
+    print(nn.hiddenLayers)
+    nn.backPropegateLearning(training)
+
+    ##a = NodeNetwork([2,4,6])
     #print(a.inputNodes[0].outPaths)
     #print(a.hiddenLayers)
     #print('hidden layers')
