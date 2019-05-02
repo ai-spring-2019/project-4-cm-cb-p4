@@ -136,9 +136,11 @@ class Node:
             outErrors.append(connection.j.error)
         return outErrors
 
-    def fixWeights(self, learningRate):
-        for connection in self.outPaths:
-            connection.weight = connection.weight + learningRate * self.ai * connection.j.error
+    def fixWeightsBias(self, learningRate):
+        for connection in self.inPaths:
+            connection.weight = connection.weight + (learningRate * connection.i.ai * self.error)
+        #also fix the bias
+        self.bias = self.bias + (learningRate * 1 * self.error)
 
     def updateInJandAI(self):
         """dot of weights and inputs-- for this to wrk the previous layer's ai's must be set"""
@@ -197,10 +199,27 @@ class NeuralNetwork:
     def gPrime(self, x):
         return logistic(x)*(1-logistic(x))
 
+    def forwardPropegate(self, input):
+        #load input into input layer
+        assert(len(input) == len(self.inputNodes)) #error check
+        for i in range(len(self.inputNodes)):
+            self.inputNodes[i].setInput(input[i])
+
+        #continue down layers
+        for layer in self.hiddenLayers + [self.outputNodes]:
+            for node in layer:
+                node.updateInJandAI()
+
+        #now collect ai of each output node into a list
+        output = []
+        for node in self.outputNodes:
+            output.append(node.ai)
+        return output
+
     def backPropegateLearning(self, inputs):
         #***ISSUE HERE IS THAT inputs is :([x1,x2,x3,x4], target)
         # Weights are initialized when connection object is made
-        iterations = 100
+        iterations = 1000
         for _ in range(iterations):
             for inp in inputs:
                 for i in range(len(self.inputNodes)):
@@ -217,25 +236,27 @@ class NeuralNetwork:
                     self.outputNodes[j].error = self.gPrime(self.outputNodes[j].inj) * (inp[1][j] - self.outputNodes[j].ai)
                     # Δ[j]←g′(inj) × (yj − aj)
 
-                self.hiddenLayers.reverse()
-                for reverseLayer in self.hiddenLayers + [self.inputNodes]:
+                #self.hiddenLayers.reverse() ** used reverse instead, now dont have to worry about fixing the reverse after
+                for reverseLayer in list(reversed(self.hiddenLayers)) + [self.inputNodes]:
                     for revNode in reverseLayer:
-                        weights = revNode.getOutWeights() #need to add bias to this
-                        errors = revNode.getOutErrors() #need to add a 1 to this to use dot prod
+                        weights = revNode.getOutWeights()
+                        errors = revNode.getOutErrors()
                         dotProd = dot_product(weights, errors)
                         revNode.error = self.gPrime(revNode.inj) * dotProd
                         # Δ[i] ← g′(ini) sum(wi,j Δ[j])
 
-                for connectedLayer in [self.inputNodes] + self.hiddenLayers:
+                for connectedLayer in self.hiddenLayers + [self.outputNodes]:
                     for node in connectedLayer:
-                        node.fixWeights(self.learningRate)
-                        ##**** i think we need a line here that updates the bias of each node as well (as thats essentially a weight on the constant)
+                        node.fixWeightsBias(self.learningRate) #updated this occur from destination node rather than origin
                         # wi,j←wi,j + α × ai × Δ[j]
 
             # Change if we go until accuracy level is met
             self.learningRate = self.learningRate - (self.learningRate * (1 / iterations))
 
         return self
+
+    def __repr__(self):
+        return str([self.inputNodes] + self.hiddenLayers + [self.outputNodes])
 
 
         #NOW IN LOOP for until satisfied
@@ -260,14 +281,29 @@ def main():
     pairs = convert_data_to_pairs(data, header)
 
     # Note: add 1.0 to the front of each x vector to account for the dummy input
-    training = [([1.0] + x, y) for (x, y) in pairs]
+    training = pairs #[([1.0] + x, y) for (x, y) in pairs]
 
     # Check out the data:
-    for example in training:
-        print(example)
-    nn = NeuralNetwork([3, 6, 3])
-    print(nn.hiddenLayers)
+    #for example in training:
+    #    print(example)
+    nn = NeuralNetwork([len(training[0][0]),5, len(training[0][1])])
     nn.backPropegateLearning(training)
+    for example in training:
+        print("--------------------------------------------------------")
+        print("input: {}  ||  correct output: {}".format(example[0],example[1]))
+        print()
+        fp = nn.forwardPropegate(example[0])
+        print("nn output: {}".format(fp))
+        print()
+        rounded = []
+        for i in range(len(fp)):
+            rounded.append(round(fp[i]))
+        print("predicted class: {}".format(rounded))
+        print("--")
+        print("correctly classified: "+str(rounded == example[1]))
+        print()
+        print()
+
 
     ##a = NodeNetwork([2,4,6])
     #print(a.inputNodes[0].outPaths)
