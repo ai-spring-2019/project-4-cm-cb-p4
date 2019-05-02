@@ -254,7 +254,7 @@ class NeuralNetwork:
 ################################################################################
 
 def linear(x):
-    pass
+    return x
 
 def logistic(x):
     """Logistic / sigmoid function"""
@@ -265,9 +265,25 @@ def logistic(x):
     return 1.0 / denom
 
 def tanh(x):
-    pass
+    """Tanh function"""
+    try:
+        numerator = 1 - math.e ** (-2 * x)
+        denominator = 1 + math.e ** (-2 * x)
+    except OverflowError:
+        return 0.0
+    return numerator / denominator
 
 def relu(x):
+    # THIS SEEMS NOT THAT USEFUL, BUT THE ARTICLE I READ SAID RELU IS VERY EFFECTIVE
+    return max(0,x)
+
+def leakyRelu(x):
+    pass
+
+def maxOut(x):
+    pass
+
+def softmax(z):
     pass
 
 ################################################################################
