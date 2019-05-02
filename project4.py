@@ -219,7 +219,7 @@ class NeuralNetwork:
     def backPropegateLearning(self, inputs):
         #***ISSUE HERE IS THAT inputs is :([x1,x2,x3,x4], target)
         # Weights are initialized when connection object is made
-        iterations = 1000
+        iterations = 5000
         for _ in range(iterations):
             for inp in inputs:
                 for i in range(len(self.inputNodes)):
