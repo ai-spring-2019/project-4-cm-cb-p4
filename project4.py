@@ -203,7 +203,7 @@ class NodeNetwork:
         for _ in range(iterations):
             for inp in inputs:
                 for i in range(len(self.inputNodes)):
-                    self.inputNodes[i].setInput(inp[0])
+                    self.inputNodes[i].setInput(inp[0][i])
                     # ai ←xi
 
                 for layer in self.hiddenLayers + [self.outputNodes]:
@@ -213,7 +213,7 @@ class NodeNetwork:
                         # aj ←g(inj)
 
                 for j in range(len(self.outputNodes)):
-                    self.outputNodes[j].error = self.gPrime(self.outputNodes[j].inj) * (inp[1] - self.outputNodes[j].aj)
+                    self.outputNodes[j].error = self.gPrime(self.outputNodes[j].inj) * (inp[1][j] - self.outputNodes[j].aj)
                     # Δ[j]←g′(inj) × (yj − aj)
 
                 for reverseLayer in self.hiddenLayers.reverse() + [self.inputNodes.reverse()]:
@@ -252,7 +252,7 @@ class NodeNetwork:
 
 
 def main():
-    """
+
     header, data = read_data(sys.argv[1], ",")
 
     pairs = convert_data_to_pairs(data, header)
@@ -263,13 +263,14 @@ def main():
     # Check out the data:
     for example in training:
         print(example)
-    """
-    a = NodeNetwork([2,4,6])
-    print(a.inputNodes[0].outPaths)
-    print(a.hiddenLayers)
-    print('hidden layers')
-    for layer in a.hiddenLayers:
-        print(layer)
+    nn = NeuralNetwork([3, 6, 3])
+    nn.back_propagation_learning(training)
+    #a = NodeNetwork([2,4,6])
+    #print(a.inputNodes[0].outPaths)
+    #print(a.hiddenLayers)
+    #print('hidden layers')
+    #for layer in a.hiddenLayers:
+    #    print(layer)
     #print(a.hiddenLayers[0][0].inPaths)
 
     ### I expect the running of your program will work something like this;
