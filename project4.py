@@ -47,14 +47,6 @@ def dot_product(v1, v2):
         sum += v1[i] * v2[i]
     return sum
 
-def logistic(x):
-    """Logistic / sigmoid function"""
-    try:
-        denom = (1 + math.e ** -x)
-    except OverflowError:
-        return 0.0
-    return 1.0 / denom
-
 def accuracy(nn, pairs):
     """Computes the accuracy of a network on given pairs. Assumes nn has a
     predict_class method, which gives the predicted class for the last run
@@ -264,8 +256,13 @@ class NeuralNetwork:
 def linear(x):
     pass
 
-def sigmoid(x):
-    pass
+def logistic(x):
+    """Logistic / sigmoid function"""
+    try:
+        denom = (1 + math.e ** -x)
+    except OverflowError:
+        return 0.0
+    return 1.0 / denom
 
 def tanh(x):
     pass
