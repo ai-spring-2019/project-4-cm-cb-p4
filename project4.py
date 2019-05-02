@@ -100,7 +100,7 @@ class Node:
         self.inj = 0
         self.ai = 0
         self.error = 0
-        self.bias = 0
+        self.bias = random.random()
         self.layerIndex = layerIndex
         self.layerNum = layerNum
         self.inPaths = []
@@ -198,6 +198,7 @@ class NodeNetwork:
         return logistic(x)*(1-logistic(x))
 
     def backPropegateLearning(self, inputs):
+        #***ISSUE HERE IS THAT inputs is :([x1,x2,x3,x4], target)
         # Weights are initialized when connection object is made
         iterations = 100
         for _ in range(iterations):
@@ -227,6 +228,7 @@ class NodeNetwork:
                 for connectedLayer in [self.inputNodes] + self.hiddenLayers:
                     for node in connectedLayer:
                         node.fixWeights(self.learningRate)
+                        ##**** i think we need a line here that updates the bias of each node as well (as thats essentially a weight on the constant)
                         # wi,j←wi,j + α × ai × Δ[j]
 
             # Change if we go until accuracy level is met
@@ -252,7 +254,7 @@ class NodeNetwork:
 
 
 def main():
-
+    """
     header, data = read_data(sys.argv[1], ",")
 
     pairs = convert_data_to_pairs(data, header)
@@ -265,7 +267,8 @@ def main():
         print(example)
     nn = NeuralNetwork([3, 6, 3])
     nn.back_propagation_learning(training)
-    #a = NodeNetwork([2,4,6])
+    """
+    a = NodeNetwork([2,4,6])
     #print(a.inputNodes[0].outPaths)
     #print(a.hiddenLayers)
     #print('hidden layers')
