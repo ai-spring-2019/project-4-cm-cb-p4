@@ -134,14 +134,14 @@ class Node:
         #also fix the bias
         self.bias = self.bias + (learningRate * 1 * self.error)
 
-    def updateInJandAI(self):
+    def updateInJandAI(self, activationFn):
         """dot of weights and inputs-- for this to wrk the previous layer's ai's must be set"""
         inj = 0
         for connection in self.inPaths:
             inj += (connection.i.ai * connection.weight)
         inj += self.bias
         self.inj = inj
-        self.ai = logistic(inj)
+        self.ai = activationFunction(inj, activationFn)
 
 def nodeLayerConnect(firstNodes, nextNodes):
     for node in firstNodes:
@@ -169,7 +169,7 @@ class OutputNode(Node):
 
 
 class NeuralNetwork:
-    def __init__(self, nodeNumberList):
+    def __init__(self, nodeNumberList, activationFunction = 'logistic'):
         assert(len(nodeNumberList) > 1) #must have at least input layer and output
         hiddenLayers = []
         inputNodes = [InputNode(0, i) for i in range(nodeNumberList[0])]
@@ -187,9 +187,10 @@ class NeuralNetwork:
         self.hiddenLayers = hiddenLayers
         self.outputNodes = outputNodes
         self.learningRate = 0.95
+        self.activationFn = activationFunction
 
-    def gPrime(self, x):        # WE HAVE TO CHANGE THIS, SEE PIAZZA
-        return logistic(x)*(1-logistic(x))
+    def gPrime(self, x):
+        return activationFunction(x, self.activationFn)*(1-activationFunction(x, self.activationFn))
 
     def forwardPropegate(self, input):
         #load input into input layer
@@ -200,7 +201,7 @@ class NeuralNetwork:
         #continue down layers
         for layer in self.hiddenLayers + [self.outputNodes]:
             for node in layer:
-                node.updateInJandAI()
+                node.updateInJandAI(self.activationFn)
 
         #now collect ai of each output node into a list
         output = []
@@ -219,7 +220,7 @@ class NeuralNetwork:
 
                 for layer in self.hiddenLayers + [self.outputNodes]:
                     for node in layer:
-                        node.updateInJandAI()
+                        node.updateInJandAI(self.activationFn)
                         # inj← sum(wi,j*ai)
                         # aj ←g(inj)
 
@@ -252,6 +253,24 @@ class NeuralNetwork:
 ################################################################################
 ### Activation Functions
 ################################################################################
+
+def activationFunction(x, name):
+    if name == 'logistic':
+        return logistic(x)
+    elif name == 'linear':
+        return linear(x)
+    elif name == 'tanh':
+        return tanh(x)
+    elif name == 'relu':
+        return relu(x)
+    elif name == 'leakyRelu':
+        return leakyRelu(x)
+    elif name == 'maxOut':
+        return maxOut(x)
+    else:
+        print('INCORRECT ACTIVATION FUNCTION NAME')
+        print('{} is not valid'.format(name))
+        quit()
 
 def linear(x):
     return x
@@ -378,11 +397,11 @@ def main():
     # Check out the data:
     #for example in training:
     #    print(example)
-    n = crossValidationWrapper(2,training)
-    print(n)
-    quit()
-    nn = NeuralNetwork([len(training[0][0]),5, len(training[0][1])])
-    nn.backPropegateLearning(training)
+    nn = crossValidationWrapper(2,training)
+    print(nn)
+    #quit()
+    #nn = NeuralNetwork([len(training[0][0]),5, len(training[0][1])])
+    #nn.backPropegateLearning(training)
     for example in training:
         print("--------------------------------------------------------")
         print("input: {}  ||  correct output: {}".format(example[0],example[1]))
