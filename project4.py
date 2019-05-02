@@ -198,12 +198,13 @@ class NodeNetwork:
         return logistic(x)*(1-logistic(x))
 
     def backPropegateLearning(self, inputs):
+        #***ISSUE HERE IS THAT inputs is :([x1,x2,x3,x4], target)
         # Weights are initialized when connection object is made
         iterations = 100
         for _ in range(iterations):
             for inp in inputs:
                 for i in range(len(self.inputNodes)):
-                    self.inputNodes[i].setInput(inp[0])
+                    self.inputNodes[i].setInput(inp[0]) ####***shouldnt this be inp[i]????????
                     # ai ←xi
 
                 for layer in self.hiddenLayers + [self.outputNodes]:
