@@ -196,7 +196,7 @@ class NeuralNetwork:
         self.outputNodes = outputNodes
         self.learningRate = 0.95
 
-    def gPrime(self, x):
+    def gPrime(self, x):        # WE HAVE TO CHANGE THIS, SEE PIAZZA
         return logistic(x)*(1-logistic(x))
 
     def forwardPropegate(self, input):
@@ -284,9 +284,10 @@ def crossValidationWrapper(learner, k, examples):
         crossValResults = crossValidation(learner, size, k, exampleChunks)
         errorTraining.append(crossValResults[0])
         errorValidation.append(crossValResults[1])
-        if min(errorTraining) == 0:
+        if min(errorTraining) == 0:     # Define converged here
             bestSize = errorValidation.index(min(errorValidation)) + 1
             return learner(bestSize, examples)
+        size += 1
 
 def crossValidation(learner, size, k, exampleChunks):
     avgErrorTraining = 0
