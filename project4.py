@@ -100,7 +100,7 @@ class Node:
         self.inj = 0
         self.ai = 0
         self.error = 0
-        self.bias = 0
+        self.bias = random.random()
         self.layerIndex = layerIndex
         self.layerNum = layerNum
         self.inPaths = []
@@ -228,6 +228,7 @@ class NodeNetwork:
                 for connectedLayer in [self.inputNodes] + self.hiddenLayers:
                     for node in connectedLayer:
                         node.fixWeights(self.learningRate)
+                        ##**** i think we need a line here that updates the bias of each node as well (as thats essentially a weight on the constant)
                         # wi,j←wi,j + α × ai × Δ[j]
 
             # Change if we go until accuracy level is met
