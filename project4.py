@@ -217,7 +217,6 @@ class NeuralNetwork:
         return output
 
     def backPropegateLearning(self, inputs):
-        #***ISSUE HERE IS THAT inputs is :([x1,x2,x3,x4], target)
         # Weights are initialized when connection object is made
         iterations = 5000
         for _ in range(iterations):
@@ -258,22 +257,52 @@ class NeuralNetwork:
     def __repr__(self):
         return str([self.inputNodes] + self.hiddenLayers + [self.outputNodes])
 
+################################################################################
+### Cross Validation
+################################################################################
 
-        #NOW IN LOOP for until satisfied
-        #   NOw loop through examples
-        #       Put input values inputNodes
-        #       For layer in (self.hiddenLayers + [outputLayer]):
-        #           [set node.values to correct list for all nodes in layer
-        #           then call node.updateValue] - updateLayerActivations
-        #######Back Propegation
-        #       For each node in self.outputNodes:
-        #           sets errors of output nodes (use g'(x) = logistic(x)*(1-logistic(x))) inj = value, aj = activation
-        #       For layer in reverse(self.hiddenlayers ) + [input] ** make sure this is in right order
-        #           set error of each node in layer using
+def partition(examples, fold):
+    validation = examples[fold]
+    training = []
+    for i in range(len(examples)):
+        if i != fold:
+            training.append(examples[i])
+    return training, validation
+
+def chunkList(l, k):
+    chunks = []
+    for i in range(0, len(l), k):
+        chunks.append(l[i:i+k])
+    return chunks
+
+def crossValidationWrapper(learner, k, examples):
+    errorTraining = []
+    errorValidation = []
+    size = 1
+    exampleChunks = chunkList(examples, k)
+    while True:
+        crossValResults = crossValidation(learner, size, k, exampleChunks)
+        errorTraining.append(crossValResults[0])
+        errorValidation.append(crossValResults[1])
+        if min(errorTraining) == 0:
+            bestSize = errorValidation.index(min(errorValidation)) + 1
+            return learner(bestSize, examples)
+
+def crossValidation(learner, size, k, exampleChunks):
+    avgErrorTraining = 0
+    avgErrorValidation = 0
+
+    for fold in range(1, k):
+        trainingSet, validationSet = partition(exampleChunks, fold)
+        hypothesis = learner(size, trainingSet)
+        avgErrorTraining += errorRate(hypothesis, trainingSet)      # CREATE ERRORRATE FUNCTION
+        avgErrorValidation += errorRate(hypothesis, validationSet)  # HAVE TO CREATE THIS FUNCTION
+    return avgErrorTraining / k, avgErrorValidation / k
 
 
-        ###hidden layer node should track both inward and outward weights
-
+################################################################################
+### Main
+################################################################################
 
 def main():
     header, data = read_data(sys.argv[1], ",")
