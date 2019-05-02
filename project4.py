@@ -219,8 +219,8 @@ class NodeNetwork:
 
                 for reverseLayer in self.hiddenLayers.reverse() + [self.inputNodes.reverse()]:
                     for revNode in reverseLayer:
-                        weights = revNode.getOutWeights()
-                        errors = revNode.getOutErrors()
+                        weights = revNode.getOutWeights() #need to add bias to this
+                        errors = revNode.getOutErrors() #need to add a 1 to this to use dot prod
                         dotProd = dot_product(weights, errors)
                         revNode.error = self.gPrime(revNode.inj) * dotProd
                         # Δ[i] ← g′(ini) sum(wi,j Δ[j])
