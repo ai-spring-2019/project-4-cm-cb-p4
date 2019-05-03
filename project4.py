@@ -341,7 +341,7 @@ def partition(examples, fold):
 def chunkList(l, k):
     chunks = []
     for i in range(0, len(l), k):
-        chunks.append(l[i:i+k])
+        chunks.append(l[i:i+k]) #check if works when len(l) not evenly divisible by K
     return chunks
 
 def printEpoch(count, errorT, errorV):
@@ -366,7 +366,7 @@ def crossValidationWrapper(k, examples):
         errorValidation.append(crossValResults[1])
         if min(errorTraining) < 0.1:     # Define converged here
             bestSize = errorValidation.index(min(errorValidation)) + 1
-            return learner(bestSize, examples)
+            return learner(bestSize, examples) #                                            **********
         printEpoch(size, errorTraining, errorValidation)
         size += 1
 
@@ -374,9 +374,9 @@ def crossValidation(size, k, exampleChunks):
     avgErrorTraining = 0
     avgErrorValidation = 0
 
-    for fold in range(1, k):
+    for fold in range(k):
         trainingSet, validationSet = partition(exampleChunks, fold)
-        hypothesis = learner(size, trainingSet)
+        hypothesis = learner(size, trainingSet)#                                            ***********
         avgErrorTraining += errorRate(hypothesis, trainingSet)
         avgErrorValidation += errorRate(hypothesis, validationSet)
     return avgErrorTraining / k, avgErrorValidation / k
