@@ -8,7 +8,7 @@ Objective:  Implement forward propagating neural network that learns
 ------------------------------------------------
 """
 
-import csv, sys, random, math
+import csv, sys, random, math, copy
 
 def read_data(filename, delimiter=",", has_header=True):
     """Reads datafile using given delimiter. Returns a header and a list of
@@ -61,17 +61,16 @@ def accuracy(nn, pairs):
 
     true_positives = 0
     total = len(pairs)
-
-    for (x, y) in pairs:
-        nn.forward_propagate(x)
+    for pair in pairs:
+        nn.forward_propagate(pair[0])
         class_prediction = nn.predict_class()
-        if class_prediction != y[0]:
+        if class_prediction != pair[1]:
             true_positives += 1
 
         # outputs = nn.get_outputs()
         # print("y =", y, ",class_pred =", class_prediction, ", outputs =", outputs)
 
-    return 1 - (true_positives / total)
+    return (true_positives / total)
 
 ################################################################################
 ### Neural Network
@@ -197,6 +196,7 @@ class NeuralNetwork:
         self.outputNodes = outputNodes
         self.learningRate = 0.95
         self.activationFn = activationFunction
+        self.lastForwardPropegation = None
 
     def gPrime(self, x):
         return activationFunction(x, self.activationFn)*(1-activationFunction(x, self.activationFn))
@@ -216,6 +216,7 @@ class NeuralNetwork:
         output = []
         for node in self.outputNodes:
             output.append(node.ai)
+        self.lastForwardPropegation = output
         return output
 
     def backPropegateLearning(self, inputs):
@@ -255,6 +256,15 @@ class NeuralNetwork:
             self.learningRate = self.learningRate - (self.learningRate * (1 / iterations))
 
         return self
+
+    def predict_class(self):
+        predClass = []
+        for i in self.lastForwardPropegation:
+            predClass.append(int(round(i)))
+        return predClass
+
+    def forward_propagate(self, input):
+        return self.forwardPropegate(input)
 
     def __repr__(self):
         return str([self.inputNodes] + self.hiddenLayers + [self.outputNodes])
@@ -390,6 +400,37 @@ def crossValidation(size, k, exampleChunks):
         avgErrorValidation += errorRate(hypothesis, validationSet)
     return avgErrorTraining / k, avgErrorValidation / k
 
+def crossValidation2(examples):
+    randList = copy.deepcopy(examples)
+    random.shuffle(randList)
+    #want 5 approx equal sets
+    chunkSize = int(len(examples)/5)
+    chunkList = []
+    for i in range(0,len(randList),chunkSize):
+        chunkList.append(randList[i:i+chunkSize])
+    leftover = []
+    while len(chunkList) > 5:
+        leftover += chunkList.pop() #take remainders
+    for i, ex in enumerate(leftover):
+        chunkList[i%5].append(ex) #distribute over others
+
+    inputs = len(examples[0][0])
+    outputs = len(examples[0][1])
+    hiddenLayerSize = int((inputs+outputs)/2)
+    accuracies = []
+    for i in range(5):
+        testSet = chunkList[i]
+        trainingSet = []
+        for chunk in chunkList:
+            if chunk != chunkList[i]:
+                trainingSet += chunk
+        nn = NeuralNetwork([inputs, hiddenLayerSize, outputs])
+        nn.backPropegateLearning(trainingSet)
+        accuracies.append(accuracy(nn, testSet))
+    print(accuracies)
+    return
+
+
 
 ################################################################################
 ### Main
@@ -406,8 +447,9 @@ def main():
     # Check out the data:
     #for example in training:
     #    print(example)
-    nn = crossValidationWrapper(2,training)
-    print(nn)
+    crossValidation2(training)
+    #print(nn)
+    """
     #quit()
     #nn = NeuralNetwork([len(training[0][0]),5, len(training[0][1])])
     #nn.backPropegateLearning(training)
@@ -426,6 +468,7 @@ def main():
         print("correctly classified: "+str(rounded == example[1]))
         print()
         print()
+        """
 
 
     ##a = NodeNetwork([2,4,6])
