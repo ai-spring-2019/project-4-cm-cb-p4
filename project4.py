@@ -174,6 +174,15 @@ class NeuralNetwork:
         hiddenLayers = []
         inputNodes = [InputNode(0, i) for i in range(nodeNumberList[0])]
         outputNodes = [OutputNode(len(nodeNumberList) - 1, i) for i in range(nodeNumberList[-1])]
+        if len(nodeNumberList) == 2:
+            #no hidden layers
+            nodeLayerConnect(inputNodes,outputNodes)
+            self.inputNodes = inputNodes
+            self.hiddenLayers = []
+            self.outputNodes = outputNodes
+            self.learningRate = .95
+            self.activationFn = activationFunction
+            return
         for layer in range(len(nodeNumberList) - 2):
             hiddenLayers.append([Node(layer + 1,index) for index in range(nodeNumberList[layer+1])])
         #connect input nodes and first hidden layer
