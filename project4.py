@@ -9,6 +9,8 @@ Objective:  Implement forward propagating neural network that learns
 """
 
 import csv, sys, random, math, copy
+from statistics import mean
+import pandas as pd
 
 def read_data(filename, delimiter=",", has_header=True):
     """Reads datafile using given delimiter. Returns a header and a list of
@@ -70,7 +72,7 @@ def accuracy(nn, pairs):
         # outputs = nn.get_outputs()
         # print("y =", y, ",class_pred =", class_prediction, ", outputs =", outputs)
 
-    return (true_positives / total)
+    return 1 - (true_positives / total)
 
 ################################################################################
 ### Neural Network
@@ -219,9 +221,9 @@ class NeuralNetwork:
         self.lastForwardPropegation = output
         return output
 
-    def backPropegateLearning(self, inputs):
+    def backPropegateLearning(self, inputs): #should check iteration number
         # Weights are initialized when connection object is made
-        iterations = 5000
+        iterations = 500
         for _ in range(iterations):
             for inp in inputs:
                 for i in range(len(self.inputNodes)):
@@ -400,36 +402,67 @@ def crossValidation(size, k, exampleChunks):
         avgErrorValidation += errorRate(hypothesis, validationSet)
     return avgErrorTraining / k, avgErrorValidation / k
 
-def crossValidation2(examples):
-    randList = copy.deepcopy(examples)
-    random.shuffle(randList)
+
+def confusionMatrix(nn, pairs):
+    """creates confusionMatrix for accuracy check on nn using pairs"""
+    numTargets = len(pairs[0][1])
+    matrix = pd.DataFrame(index = ["predicted:{}".format(i) for i in range(numTargets)],
+                          columns = ["target:{}".format(i) for i in range(numTargets)]).fillna(0)
+
+    for example in pairs:
+        nn.forwardPropegate(example[0])
+        predicted = "predicted:{}".format((nn.predict_class()).index(1))
+        correct = "target:{}".format((example[1]).index(1))
+        matrix.loc[predicted, correct] += 1
+    print(matrix)
+
+
+
+def randomChunks(examples, chunkNumber=5):
+    """breaks examples into chunkNumber random sets of approx same size and returns list of chunks"""
+    shuffled = copy.deepcopy(examples)
+    random.shuffle(shuffled) #want to make sure chunks fully random
     #want 5 approx equal sets
-    chunkSize = int(len(examples)/5)
+    chunkSize = int(len(shuffled)/chunkNumber)
     chunkList = []
-    for i in range(0,len(randList),chunkSize):
-        chunkList.append(randList[i:i+chunkSize])
+    for i in range(0,len(shuffled),chunkSize):
+        chunkList.append(shuffled[i:i+chunkSize])
     leftover = []
-    while len(chunkList) > 5:
+    while len(chunkList) > chunkNumber:
         leftover += chunkList.pop() #take remainders
     for i, ex in enumerate(leftover):
         chunkList[i%5].append(ex) #distribute over others
+    return chunkList
 
-    inputs = len(examples[0][0])
-    outputs = len(examples[0][1])
-    hiddenLayerSize = int((inputs+outputs)/2)
+def avgChunkAccuracy(chunkList, nodeNumberList, accuracyFn = accuracy):
+    """calculates avg accuracy of nn of given structure using each chunk as a test set"""
+    assert(len(chunkList[0][0][0]) == nodeNumberList[0]) #make sure correct number of input nodes
+    assert(len(chunkList[0][0][1]) == nodeNumberList[-1]) #make sure correct number of output nodes
     accuracies = []
-    for i in range(5):
+    for i in range(len(chunkList)):
         testSet = chunkList[i]
         trainingSet = []
         for chunk in chunkList:
             if chunk != chunkList[i]:
                 trainingSet += chunk
-        nn = NeuralNetwork([inputs, hiddenLayerSize, outputs])
+        nn = NeuralNetwork(nodeNumberList)
         nn.backPropegateLearning(trainingSet)
-        accuracies.append(accuracy(nn, testSet))
-    print(accuracies)
-    return
+        accuracies.append(accuracyFn(nn,testSet))
+    return mean(accuracies) #return average accuracy across all test sets
 
+def crossValidation2(examples):
+    chunkList = randomChunks(examples,5)
+    inputNodes = len(examples[0][0])
+    outputNodes = len(examples[0][1])
+    hiddenLayerNodes = 1
+    #for only 1 hidden layer
+    bestStructure = dict()
+    for i in range(10):
+        nodeNumberList = [inputNodes, hiddenLayerNodes, outputNodes]
+        currentAccuracy = avgChunkAccuracy(chunkList, nodeNumberList)
+        hiddenLayerNodes += 1
+        print(nodeNumberList)
+        print(currentAccuracy)
 
 
 ################################################################################
@@ -443,6 +476,7 @@ def main():
 
     # Note: add 1.0 to the front of each x vector to account for the dummy input
     training = pairs #[([1.0] + x, y) for (x, y) in pairs]
+
 
     # Check out the data:
     #for example in training:
