@@ -136,7 +136,7 @@ class Node:
         self.bias = self.bias + (learningRate * 1 * self.error)
 
     def updateInJandAI(self, activationFn):
-        """dot of weights and inputs-- for this to wrk the previous layer's ai's must be set"""
+        """dot of weights and inputs-- for this to work sthe previous layer's ai's must be set"""
         inj = 0
         for connection in self.inPaths:
             inj += (connection.i.ai * connection.weight)
@@ -183,6 +183,7 @@ class NeuralNetwork:
             self.outputNodes = outputNodes
             self.learningRate = .95
             self.activationFn = activationFunction
+            self.lastForwardPropegation = None
             return
         for layer in range(len(nodeNumberList) - 2):
             hiddenLayers.append([Node(layer + 1,index) for index in range(nodeNumberList[layer+1])])
@@ -199,6 +200,7 @@ class NeuralNetwork:
         self.learningRate = 0.95
         self.activationFn = activationFunction
         self.lastForwardPropegation = None
+        return
 
     def gPrime(self, x):
         return activationFunction(x, self.activationFn)*(1-activationFunction(x, self.activationFn))
@@ -221,9 +223,8 @@ class NeuralNetwork:
         self.lastForwardPropegation = output
         return output
 
-    def backPropegateLearning(self, inputs): #should check iteration number
+    def backPropegateLearning(self, inputs, iterations = 1000): #should check iteration number
         # Weights are initialized when connection object is made
-        iterations = 500
         for _ in range(iterations):
             for inp in inputs:
                 for i in range(len(self.inputNodes)):
@@ -410,9 +411,19 @@ def confusionMatrix(nn, pairs):
                           columns = ["target:{}".format(i) for i in range(numTargets)]).fillna(0)
 
     for example in pairs:
-        nn.forwardPropegate(example[0])
-        predicted = "predicted:{}".format((nn.predict_class()).index(1))
+        pred = nn.forwardPropegate(example[0])
+        predicted = "predicted:{}".format(round(pred.index(max(pred))))
         correct = "target:{}".format((example[1]).index(1))
+        matrix.loc[predicted, correct] += 1
+    print(matrix)
+
+def binaryMatrix(nn,pairs):
+    matrix = pd.DataFrame(index = ["predicted:{}".format(i) for i in [0,1]],
+                          columns = ["target:{}".format(i) for i in [0,1]]).fillna(0)
+    for example in pairs:
+        pred = nn.forwardPropegate(example[0])
+        predicted = "predicted:{}".format(round(pred[0]))
+        correct = "target:{}".format(round(example[1][0]))
         matrix.loc[predicted, correct] += 1
     print(matrix)
 
@@ -434,7 +445,7 @@ def randomChunks(examples, chunkNumber=5):
         chunkList[i%5].append(ex) #distribute over others
     return chunkList
 
-def avgChunkAccuracy(chunkList, nodeNumberList, accuracyFn = accuracy):
+def avgChunkAccuracy(chunkList, nodeNumberList,iterations, accuracyFn = accuracy):
     """calculates avg accuracy of nn of given structure using each chunk as a test set"""
     assert(len(chunkList[0][0][0]) == nodeNumberList[0]) #make sure correct number of input nodes
     assert(len(chunkList[0][0][1]) == nodeNumberList[-1]) #make sure correct number of output nodes
@@ -446,7 +457,8 @@ def avgChunkAccuracy(chunkList, nodeNumberList, accuracyFn = accuracy):
             if chunk != chunkList[i]:
                 trainingSet += chunk
         nn = NeuralNetwork(nodeNumberList)
-        nn.backPropegateLearning(trainingSet)
+        nn.backPropegateLearning(trainingSet,iterations)
+        binaryMatrix(nn,testSet)
         accuracies.append(accuracyFn(nn,testSet))
     return mean(accuracies) #return average accuracy across all test sets
 
@@ -454,15 +466,27 @@ def crossValidation2(examples):
     chunkList = randomChunks(examples,5)
     inputNodes = len(examples[0][0])
     outputNodes = len(examples[0][1])
-    hiddenLayerNodes = 1
+    hiddenLayerNodes = 10
     #for only 1 hidden layer
     bestStructure = dict()
     for i in range(10):
         nodeNumberList = [inputNodes, hiddenLayerNodes, outputNodes]
-        currentAccuracy = avgChunkAccuracy(chunkList, nodeNumberList)
+        currentAccuracy = avgChunkAccuracy(chunkList, nodeNumberList, 5000)
         hiddenLayerNodes += 1
         print(nodeNumberList)
-        print(currentAccuracy)
+        print("accuracy:{}".format(currentAccuracy))
+
+def iterationTest(nodeNumberList, pairs):
+    iters = [25,50,75,100,125,150,175,200,225,250,275,300,325,350,375,400,425,450,475,500]
+    chunkList = randomChunks(pairs)
+    accs = dict()
+    for i in iters:
+        acc = avgChunkAccuracy(chunkList,nodeNumberList,i)
+        accs[i] = acc
+        print("iterations:{}".format(i))
+        print("accuracy:{}".format(acc))
+        print("-------------------------------")
+    print(accs)
 
 
 ################################################################################
@@ -476,12 +500,12 @@ def main():
 
     # Note: add 1.0 to the front of each x vector to account for the dummy input
     training = pairs #[([1.0] + x, y) for (x, y) in pairs]
-
-
+    iterationTest([30,5,1],training)
+    #iterationTest([30,3,1],pairs)
     # Check out the data:
     #for example in training:
     #    print(example)
-    crossValidation2(training)
+    #crossValidation2(training)
     #print(nn)
     """
     #quit()
