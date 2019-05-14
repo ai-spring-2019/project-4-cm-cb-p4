@@ -5,6 +5,14 @@ Date:       5/1/19
 Assignment: Project 4
 Objective:  Implement forward propagating neural network that learns
             through back propagation
+
+            in main call NeuralNetwork([3,4,3]) to create neural network
+            with layers of 3,4,and 3 nodes respectively.
+            call nn.backPropegateLearning(data) to train the network on the training data
+            call nn.forwardPropegate(example) to retrieve predicted output class
+            call crossValidation2(data) to test different network structures with a
+            single hidden layer of 1-10 nodes.  Will output the cross-validated accuracy of
+            each structure of [input, i, output] for i in range(1,10)
 ------------------------------------------------
 """
 
@@ -463,10 +471,13 @@ def avgChunkAccuracy(chunkList, nodeNumberList,iterations, accuracyFn = accuracy
     return mean(accuracies) #return average accuracy across all test sets
 
 def crossValidation2(examples):
+    """crossvalidates on examples for varying structures-
+    default is single hidden layer with nodes 1-10, but can be changed
+    to any desired tests"""
     chunkList = randomChunks(examples,5)
     inputNodes = len(examples[0][0])
     outputNodes = len(examples[0][1])
-    hiddenLayerNodes = 10
+    hiddenLayerNodes = 1 #beginning # nodes in hidden layer
     #for only 1 hidden layer
     bestStructure = dict()
     for i in range(10):
@@ -477,6 +488,8 @@ def crossValidation2(examples):
         print("accuracy:{}".format(currentAccuracy))
 
 def iterationTest(nodeNumberList, pairs):
+    """for given network structure and data, performs crossValidation
+    using varying iteration number and outputs the dictionary iterations:accuracy"""
     iters = [25,50,75,100,125,150,175,200,225,250,275,300,325,350,375,400,425,450,475,500]
     chunkList = randomChunks(pairs)
     accs = dict()
@@ -500,12 +513,12 @@ def main():
 
     # Note: add 1.0 to the front of each x vector to account for the dummy input
     training = pairs #[([1.0] + x, y) for (x, y) in pairs]
-    iterationTest([30,5,1],training)
+
     #iterationTest([30,3,1],pairs)
     # Check out the data:
     #for example in training:
     #    print(example)
-    #crossValidation2(training)
+    crossValidation2(training)
     #print(nn)
     """
     #quit()
